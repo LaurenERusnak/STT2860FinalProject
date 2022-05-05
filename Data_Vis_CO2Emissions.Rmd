@@ -1,0 +1,191 @@
+---
+title: "STT2860: Final Presentation"
+author: "Author: Lauren Rusnak"
+date: "`r format(Sys.time(), '%B %d, %Y @ %I:%M %p')`"
+output: ioslides_presentation
+---
+
+```{r global_options, include = FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  message = FALSE,
+  warning = FALSE,
+  comment = NA
+)
+```
+
+## 
+
+### **Packages Used**
+
+I used tidyverse for data manipulations.
+```{r, echo = TRUE}
+library(tidyverse)
+```
+
+I used mapdata to see if global trends existed in the data.
+```{r, echo = TRUE}
+library(mapdata)
+```
+
+
+## 
+
+### **Environment Data - UNdata**
+
+I found data from the UNdata website (https://data.un.org/).
+The dataset was last updated November 2021.
+
+**Variables in the Dataset:**
+
+* `CO2 emission estimates`: country for which the CO2 emission is being estimated
+* `Year`: year of the CO2 estimate
+* `Series`: Total CO2 Emissions or CO2 Emissions per capita
+* `Value`: The number in thousand metric tons of CO2 or the number in metric tons of CO2
+
+
+```{r}
+CO2_data <- read_csv("Carbon Dioxide Emission Estimates Raw Data.csv")
+```
+
+## 
+
+### **Data Manipulations**
+
+* `pivot_wider()`: Manipulated the data so that the total emissions and emission per capita were in different columns   
+* `rename()`: Renamed the columns to better signify data and into more R friendly format
+* `filter()`: Filtered the data so I only had data from the most recent year: 2017
+* `transmute()` & `case_when()`: Changed the names of countries so that the would match the names in mapdata  
+  
+  
+```{r}
+CO2_data_clean <-
+  pivot_wider(data = CO2_data,
+              names_from = "Series",
+              values_from = "Value") %>%
+  rename("Country" = "CO2 emission estimates", "Total_Emissions" = "Emissions (thousand metric tons of carbon dioxide)", "Emissions_per_capita" = "Emissions per capita (metric tons of carbon dioxide)") %>%
+  filter(Year == 2017) %>%
+   
+  transmute(region = case_when(
+    Country == "United States of America" ~ "USA",
+    Country == "Bolivia (Plurin. State of)" ~ "Bolivia",
+    Country == "Venezuela (Boliv. Rep. of)" ~ "Venezuela",
+    Country == "United Kingdom" ~ "UK",
+    Country == "Czechia" ~ "Czech Republic",
+    Country == "Russian Federation" ~ "Russia",
+    Country == "Iran (Islamic Republic of)" ~ "Iran",
+    Country == "Viet Nam" ~ "Vietnam",
+    Country == "Syrian Arab Republic" ~ "Syria",
+    Country == "Côte d’Ivoire" ~ "Ivory Coast",
+    Country == "Dem. Rep. of the Congo" ~ "Democratic Republic of the Congo",
+    Country == "Dem. People's Rep. Korea" ~ "North Korea",
+    Country == "Brunei Darussalam" ~ "Brunei",
+    TRUE ~ Country
+    ),
+    Year = Year,
+    Total_Emissions = Total_Emissions,
+    Emissions_per_capita = Emissions_per_capita)
+
+```
+
+
+## 
+### **CO2 Total Emissions**
+
+```{r, fig.align = "center"}
+CO2_data_clean %>%
+  ggplot(aes(x = Total_Emissions)) +
+  geom_boxplot() +
+  theme(aspect.ratio = 5/15,
+        plot.title = element_text(hjust = 0.5),
+        plot.caption = element_text(hjust = 0)) +
+  labs(title = "Total CO2 Emissions of Countries in 2017",
+       x = "Total CO2 Emissions (thousand metric tons of CO2)",
+       caption = "
+There are several outliers that contribute greatly to the total CO2 emissions. 
+The biggest offenders: China, USA, India, Russia, and Japan")
+
+```
+
+##
+
+```{r}
+mapdata <- map_data("world")
+
+mapdata_CO2 <- left_join(mapdata, CO2_data_clean, "region")
+
+
+```
+
+
+```{r, fig.align = "center"}
+ggplot(mapdata_CO2) +
+  geom_polygon(aes(x = long, y = lat, group = group, fill = Total_Emissions)) +   
+  scale_fill_gradient2(midpoint = 5000000, low = "lightyellow", mid = "orange", high = "red2") +
+  labs(title = "CO2 Total Emissions of each Country",
+       fill = "Total CO2 Emissions 
+(Thousand Metric Tons)",
+caption = "
+Countries with the largest populations (China, USA, India, etc.) appear to have the highest total 
+carbon dioxide emissions."
+       ) +
+  theme(legend.position = "right",
+        plot.title = element_text(hjust = 0.5),
+        plot.caption = element_text(hjust = 0),
+        aspect.ratio = 7/14)
+  
+```
+
+```{r, results = "hide"}
+print(as_tibble(arrange(CO2_data_clean, desc(Total_Emissions))), n = 5)
+```
+
+What would happen if their populations were taken into account?
+
+## 
+### **CO2 Emissions per capita**
+
+```{r}
+CO2_data_clean %>%
+  ggplot(aes(x = Emissions_per_capita)) +
+  geom_boxplot() +
+  theme(aspect.ratio = 5/15,
+        plot.title = element_text(hjust = 0.5),
+        plot.caption = element_text(hjust = 0)) +
+  labs(title = "CO2 Emissions per capita in 2017",
+       x = "CO2 Emissions per capita (metric tons of CO2)",
+       caption = "
+There are several outliers, but most countries do not overlap. The only countries that appear in the top eleven countries
+for total emission and emissions per capita lists are Canada, Saudi Arabia, and the US. The biggest offenders with 
+regard to carbon dioxide emission per capita are: Qatar, Curaçao, Kuwait, United Arab Emirates, Gibraltar, and Bahrain.")
+```
+```{r, results = "hide"}
+print(as_tibble(arrange(CO2_data_clean, desc(Emissions_per_capita))), n = 10)
+```
+
+
+##
+
+```{r, fig.align = "center"}
+ggplot(mapdata_CO2) +
+  geom_polygon(aes(x = long, y = lat, group = group, fill = Emissions_per_capita)) +   
+  scale_fill_gradient2(midpoint = 15, low = "light yellow", mid = "orange", high = "red2") +
+  labs(title = "CO2 Emissions per capita of each Country",
+       fill = "Emissions per capita 
+(Metric Tons)",
+caption = "
+The regions that have the highest CO2 emissions per capita appear to be The Middle East, 
+especially the Arabian Penisula, as well as North America."
+       ) +
+  theme(legend.position = "right",
+        plot.title = element_text(hjust = 0.5),
+        aspect.ratio = 8/15)
+  
+```
+
+##
+### **Other Lines of Inquiry**
+
+* How has carbon dioxide emissions changed overtime?
+* Is there correlation between 1st/2nd/3rd world countries and CO2 emissions?
+* How has carbon dioxide emissions changed since COVID?
