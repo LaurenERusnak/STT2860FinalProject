@@ -155,7 +155,7 @@ CO2_data_clean %>%
   labs(title = "CO2 Emissions per capita in 2017",
        x = "CO2 Emissions per capita (metric tons of CO2)",
        caption = "
-There are several outliers, but most countries do not overlap. The only countries that appear in the top eleven countries
+There are several outliers, but most outlier countries do not overlap. The only countries that appear in the top eleven countries
 for total emission and emissions per capita lists are Canada, Saudi Arabia, and the US. The biggest offenders with 
 regard to carbon dioxide emission per capita are: Qatar, Curaçao, Kuwait, United Arab Emirates, Gibraltar, and Bahrain.")
 ```
@@ -186,6 +186,6 @@ especially the Arabian Penisula, as well as North America."
 ##
 ### **Other Lines of Inquiry**
 
-* How has carbon dioxide emissions changed overtime?
+* How have carbon dioxide emissions changed overtime?
 * Is there correlation between 1st/2nd/3rd world countries and CO2 emissions?
 * How has carbon dioxide emissions changed since COVID?
